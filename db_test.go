@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mainapp/surrealdb.go"
 	"github.com/stretchr/testify/suite"
-	"github.com/surrealdb/surrealdb.go"
 )
 
 // TestDBSuite is a test s for the DB struct
@@ -19,15 +19,19 @@ type SurrealDBTestSuite struct {
 
 // a simple user struct for testing
 type testUser struct {
-	surrealdb.Basemodel `table:"test"`
-	Username            string `json:"username,omitempty"`
-	Password            string `json:"password,omitempty"`
-	ID                  string `json:"id,omitempty"`
+	surrealdb.Basemodel `       table:"test"`
+	Username            string `             json:"username,omitempty"`
+	Password            string `             json:"password,omitempty"`
+	ID                  string `             json:"id,omitempty"`
 }
 
 // getOptions returns a list of options to be used when creating a new websocket connection
 func getOptions() (options []surrealdb.Option) {
-	options = append(options, surrealdb.UseWriteCompression(true), surrealdb.WithTimeout(20*time.Second))
+	options = append(
+		options,
+		surrealdb.UseWriteCompression(true),
+		surrealdb.WithTimeout(20*time.Second),
+	)
 	return
 }
 
@@ -55,7 +59,12 @@ func (s *SurrealDBTestSuite) TearDownSuite() {
 func (t testUser) String() string {
 	// TODO I found out we can use go generate stringer to generate these, but it was a bit confusing and too much
 	// overhead atm, so doing this as a shortcut
-	return fmt.Sprintf("testUser{Username: %+v, Password: %+v, ID: %+v}", t.Username, t.Password, t.ID)
+	return fmt.Sprintf(
+		"testUser{Username: %+v, Password: %+v, ID: %+v}",
+		t.Username,
+		t.Password,
+		t.ID,
+	)
 }
 
 // openConnection opens a new connection to the database
@@ -258,10 +267,13 @@ func (s *SurrealDBTestSuite) TestUnmarshalRaw() {
 	password := "123"
 
 	// create test user with raw SurrealQL and unmarshal
-	userData, err := s.db.Query("create users:johnny set Username = $user, Password = $pass", map[string]interface{}{
-		"user": username,
-		"pass": password,
-	})
+	userData, err := s.db.Query(
+		"create users:johnny set Username = $user, Password = $pass",
+		map[string]interface{}{
+			"user": username,
+			"pass": password,
+		},
+	)
 	s.Require().NoError(err)
 
 	var userSlice []testUser
@@ -332,10 +344,12 @@ func (s *SurrealDBTestSuite) TestSmartUnMarshalQuery() {
 
 	s.Run("raw create query", func() {
 		QueryStr := "Create users set Username = $user, Password = $pass"
-		dataArr, err := surrealdb.SmartUnmarshal[[]testUser](s.db.Query(QueryStr, map[string]interface{}{
-			"user": user[0].Username,
-			"pass": user[0].Password,
-		}))
+		dataArr, err := surrealdb.SmartUnmarshal[[]testUser](
+			s.db.Query(QueryStr, map[string]interface{}{
+				"user": user[0].Username,
+				"pass": user[0].Password,
+			}),
+		)
 
 		s.Require().NoError(err)
 		s.Equal("electwix", dataArr[0].Username)
@@ -343,9 +357,11 @@ func (s *SurrealDBTestSuite) TestSmartUnMarshalQuery() {
 	})
 
 	s.Run("raw select query", func() {
-		dataArr, err := surrealdb.SmartUnmarshal[[]testUser](s.db.Query("Select * from $record", map[string]interface{}{
-			"record": user[0].ID,
-		}))
+		dataArr, err := surrealdb.SmartUnmarshal[[]testUser](
+			s.db.Query("Select * from $record", map[string]interface{}{
+				"record": user[0].ID,
+			}),
+		)
 
 		s.Require().NoError(err)
 		s.Equal("electwix", dataArr[0].Username)
@@ -381,33 +397,43 @@ func (s *SurrealDBTestSuite) TestSmartMarshalQuery() {
 	}}
 
 	s.Run("create with SmartMarshal query", func() {
-		data, err := surrealdb.SmartUnmarshal[testUser](surrealdb.SmartMarshal(s.db.Create, user[0]))
+		data, err := surrealdb.SmartUnmarshal[testUser](
+			surrealdb.SmartMarshal(s.db.Create, user[0]),
+		)
 		s.Require().NoError(err)
 		s.Equal(user[0], data)
 	})
 
 	s.Run("select with SmartMarshal query", func() {
-		data, err := surrealdb.SmartUnmarshal[testUser](surrealdb.SmartMarshal(s.db.Select, user[0]))
+		data, err := surrealdb.SmartUnmarshal[testUser](
+			surrealdb.SmartMarshal(s.db.Select, user[0]),
+		)
 		s.Require().NoError(err)
 		s.Equal(user[0], data)
 	})
 
 	s.Run("select with nil pointer SmartMarshal query", func() {
 		var nilptr *testUser
-		data, err := surrealdb.SmartUnmarshal[*testUser](surrealdb.SmartMarshal(s.db.Select, &nilptr))
+		data, err := surrealdb.SmartUnmarshal[*testUser](
+			surrealdb.SmartMarshal(s.db.Select, &nilptr),
+		)
 		s.Require().Equal(err, surrealdb.ErrNotStruct)
 		s.Equal(nilptr, data)
 	})
 
 	s.Run("select with pointer SmartMarshal query", func() {
-		data, err := surrealdb.SmartUnmarshal[*testUser](surrealdb.SmartMarshal(s.db.Select, &user[0]))
+		data, err := surrealdb.SmartUnmarshal[*testUser](
+			surrealdb.SmartMarshal(s.db.Select, &user[0]),
+		)
 		s.NoError(err)
 		s.Equal(&user[0], data)
 	})
 
 	s.Run("update with SmartMarshal query", func() {
 		user[0].Password = "test123"
-		data, err := surrealdb.SmartUnmarshal[testUser](surrealdb.SmartMarshal(s.db.Update, user[0]))
+		data, err := surrealdb.SmartUnmarshal[testUser](
+			surrealdb.SmartMarshal(s.db.Update, user[0]),
+		)
 		s.Require().NoError(err)
 		s.Equal(user[0].Password, data.Password)
 	})
@@ -419,7 +445,9 @@ func (s *SurrealDBTestSuite) TestSmartMarshalQuery() {
 	})
 
 	s.Run("check if data deleted SmartMarshal query", func() {
-		data, err := surrealdb.SmartUnmarshal[testUser](surrealdb.SmartMarshal(s.db.Select, user[0]))
+		data, err := surrealdb.SmartUnmarshal[testUser](
+			surrealdb.SmartMarshal(s.db.Select, user[0]),
+		)
 		s.Require().Equal(err, surrealdb.ErrNoRow)
 		s.Equal(data, testUser{})
 	})

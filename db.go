@@ -8,7 +8,7 @@ import (
 
 	"reflect"
 
-	"github.com/surrealdb/surrealdb.go/internal/websocket"
+	"github.com/mainapp/surrealdb.go/internal/websocket"
 )
 
 const statusOK = "OK"
@@ -75,7 +75,11 @@ func Unmarshal(data, v interface{}) error {
 		}
 		jsonBytes, err = json.Marshal(assertedData)
 		if err != nil {
-			return fmt.Errorf("failed to deserialise response '%+v' to slice: %w", assertedData, InvalidResponse)
+			return fmt.Errorf(
+				"failed to deserialise response '%+v' to slice: %w",
+				assertedData,
+				InvalidResponse,
+			)
 		}
 	} else {
 		jsonBytes, err = json.Marshal(data)
@@ -290,13 +294,13 @@ func (db *DB) Update(what string, data interface{}) (interface{}, error) {
 }
 
 // Change a table or record in the database like a PATCH request.
-func (db *DB) Change(what string, data interface{}) (interface{}, error) {
-	return db.send("change", what, data)
+func (db *DB) Merge(what string, data interface{}) (interface{}, error) {
+	return db.send("merge", what, data)
 }
 
 // Modify applies a series of JSONPatches to a table or record.
-func (db *DB) Modify(what string, data []Patch) (interface{}, error) {
-	return db.send("modify", what, data)
+func (db *DB) Patch(what string, data []Patch) (interface{}, error) {
+	return db.send("patch", what, data)
 }
 
 // Delete a table or a row from the database like a DELETE request.

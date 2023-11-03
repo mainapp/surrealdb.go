@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/surrealdb/surrealdb.go/internal/rand"
+	"github.com/mainapp/surrealdb.go/internal/rand"
 )
 
 const (
@@ -64,7 +64,10 @@ func (ws *WebSocket) Close() error {
 		close(ws.close)
 	}()
 
-	return ws.Conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(CloseMessageCode, ""))
+	return ws.Conn.WriteMessage(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(CloseMessageCode, ""),
+	)
 }
 
 var (
